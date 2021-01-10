@@ -125,23 +125,7 @@ func (ts *typeSystem) prepareTypeSystemTables() error {
 			}
 		}
 	}
-	for _, s := range insDatElements {
-		stmt := Statement{
-			Table:   tabDatElement.Table,
-			Command: INSERT,
-			Presentation: Columns{
-				{Name: "NAME", Value: &s.Name},
-				{Name: "COL_LENGTH", Value: &s.ColLength},
-				{Name: "COL_FRAC", Value: &s.ColFrac},
-				{Name: "DB_TYPE", Value: &s.DbType},
-				{Name: "GO_TYPE", Value: &s.GoType},
-				{Name: "DESCRIPTION", Value: &s.Description},
-			},
-		}
-		i, err := ts.dialect.Exec(ts.connection, &stmt)
-		log.Printf(" %d - %v \n", i, err)
-	}
-	return nil
+	return ts.Register(insDatElements, nil, nil)
 }
 
 func (ts *typeSystem) newElement(name string) buts.Type {
@@ -160,22 +144,65 @@ func (ts *typeSystem) newElement(name string) buts.Type {
 	if rows, err := ts.dialect.Query(ts.connection, &stmt); err != nil {
 		return nil
 	} else if rows.Next() {
-		te := new(typeElement)
-		err = rows.Scan(&te.name, &te.colLength, &te.colFrac, &te.dbType, &te.goType, &te.description)
+		te := buts.ElementReg{}
+		err = rows.Scan(
+			&te.Name,
+			&te.Description,
+			&te.GoType,
+			&te.DbType,
+			&te.DbLength,
+			&te.DbDecimals,
+			&te.Tags,
+			&te.Domain,
+			&te.DomainTable,
+			&te.DomainGoColumn,
+			&te.DomainDbColumn,
+			&te.Conversion,
+		)
 		if err != nil {
+			log.Println(err)
 			return nil
 		} else {
-			return te
+			rte := &typeElement{
+				typeNil: typeNil{
+					typeSystem: ts,
+					kind:       buts.Element,
+				},
+				ElementReg: te,
+				refDbType:  dbTypeMap[te.DbType],
+				refGoType:  goTypeMap[te.GoType],
+			}
+			return rte
 		}
 	}
 	return nil
 }
 
-type typeElement struct {
-	name, description                  string
-	colLength, colFrac, dbType, goType int
+type RegisterError struct {
 }
 
-func (te *typeElement) New() buts.Value {
-	return buts.Value{}
+func (ts *typeSystem) Register(elms []buts.ElementReg, strts []buts.StructureReg, tabs []buts.TableReg) error {
+	for _, s := range elms {
+		stmt := Statement{
+			Table:   tabDatElement.Table,
+			Command: INSERT,
+			Presentation: Columns{
+				{Name: "NAME", Value: &s.Name},
+				{Name: "DESCRIPTION", Value: &s.Description},
+				{Name: "GO_TYPE", Value: &s.GoType},
+				{Name: "DB_TYPE", Value: &s.DbType},
+				{Name: "COL_LENGTH", Value: &s.DbLength},
+				{Name: "COL_FRAC", Value: &s.DbDecimals},
+				{Name: "TAGS", Value: &s.Tags},
+				{Name: "DOMAIN_NAME", Value: &s.Domain},
+				{Name: "DOMAIN_TABLE", Value: &s.DomainTable},
+				{Name: "DOMAIN_GOCOL", Value: &s.DomainGoColumn},
+				{Name: "DOMAIN_DBCOL", Value: &s.DomainDbColumn},
+				{Name: "DOMAIN_CONV", Value: &s.Conversion},
+			},
+		}
+		i, err := ts.dialect.Exec(ts.connection, &stmt)
+		log.Printf(" %d - %v \n", i, err)
+	}
+	return nil
 }

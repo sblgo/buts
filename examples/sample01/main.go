@@ -10,33 +10,6 @@ import (
 	"github.com/sblgo/buts/sqldb"
 )
 
-type v struct {
-	msg string
-}
-
-func (v *v) Set(m string) {
-	v.msg = m
-}
-
-func (v *v) Get() string {
-	return v.msg
-}
-
-type V struct {
-	*v
-}
-
-func New() V {
-	return V{
-		&v{},
-	}
-}
-
-func change(v V) {
-	x := v.Get()
-	v.Set(x + x)
-}
-
 func main() {
 	db, err := gsql.Open("ramsql", "TestLoadUserAddresses")
 	if err != nil {
@@ -48,8 +21,10 @@ func main() {
 	fmt.Printf("%v - %v\n", ts, err)
 	t := ts.New(buts.Element, "TDENAME")
 	fmt.Printf("%v\n", t)
-	v := New()
-	v.Set("abc")
-	change(v)
-	fmt.Println(v.Get())
+	v := buts.New(t)
+	fmt.Printf("%v\n", v)
+	v.SetInt(3)
+	fmt.Println(v.Int())
+	v.SetString("ABCDEF" + v.String())
+	fmt.Println(v.String())
 }
