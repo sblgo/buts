@@ -30,6 +30,18 @@ func SelectTable(db *sql.DB, stmt *Statement) (*sql.Rows, error) {
 			conditions = append(conditions, col.Value)
 		}
 	}
+	if len(stmt.Sort) > 0 {
+		b.WriteString(" ORDER BY ")
+		for i, col := range stmt.Sort {
+			if i > 0 {
+				b.WriteString(", ")
+			}
+			b.WriteString(col.Name + " ")
+			if o, ok := col.Value.(string); ok {
+				b.WriteString(o)
+			}
+		}
+	}
 	b.WriteString(" ;")
 	query := b.String()
 	log.Println(query)

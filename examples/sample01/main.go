@@ -19,7 +19,7 @@ func main() {
 	var ts buts.TypeSystem
 	ts, err = sqldb.New("standard", db)
 	fmt.Printf("%v - %v\n", ts, err)
-	t := ts.New(buts.Element, "TDENAME")
+	t := ts.New(buts.Element, "TDEENAME")
 	fmt.Printf("%v\n", t)
 	v := buts.New(t)
 	fmt.Printf("%v\n", v)
@@ -27,4 +27,7 @@ func main() {
 	fmt.Println(v.Int())
 	v.SetString("ABCDEF" + v.String())
 	fmt.Println(v.String())
+	t = ts.New(buts.Structure, "TDSELEMENT")
+	fmt.Printf("%v\n", t)
+
 }

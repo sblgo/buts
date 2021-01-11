@@ -53,6 +53,7 @@ type Statement struct {
 	Command      Command
 	Presentation Columns
 	Condition    Columns
+	Sort         Columns
 }
 
 type Dialect interface {
@@ -103,6 +104,8 @@ func (ts *typeSystem) New(kind buts.Kind, name string) buts.Type {
 	switch kind {
 	case buts.Element:
 		return ts.newElement(name)
+	case buts.Structure:
+		return ts.newStructure(name)
 	}
 	return nil
 }
@@ -125,7 +128,7 @@ func (ts *typeSystem) prepareTypeSystemTables() error {
 			}
 		}
 	}
-	return ts.Register(insDatElements, nil, nil)
+	return ts.Register(insDatElements, insDatStructure, nil)
 }
 
 func (ts *typeSystem) newElement(name string) buts.Type {
@@ -178,6 +181,58 @@ func (ts *typeSystem) newElement(name string) buts.Type {
 	return nil
 }
 
+func (ts *typeSystem) newStructure(name string) buts.Type {
+	strct := &typeStructure{
+		typeNil: typeNil{
+			typeSystem: ts,
+			kind:       buts.Structure,
+		},
+		fields: make([]typeField, 0),
+	}
+	stmt := Statement{
+		Table:        tabDatStructure.Table,
+		Command:      SELECT,
+		Presentation: tabDatStructure.Presentation,
+		Condition: Columns{
+			{Name: "NAME", Value: &name, Operator: OP_EQ},
+		},
+	}
+	rows, err := ts.dialect.Query(ts.connection, &stmt)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+	if rows.Next() {
+		err = rows.Scan(&strct.Name, &strct.Description, &strct.Tags)
+	} else {
+		return nil
+	}
+
+	stmt = Statement{
+		Table:        tabDatFeld.Table,
+		Command:      SELECT,
+		Presentation: Columns{{Name: "NAME"}, {Name: "DESCRIPTION"}, {Name: "KIND"}, {Name: "TYPE"}},
+		Condition:    Columns{{Name: "STRUCT_NAME", Value: &name, Operator: OP_EQ}},
+		Sort:         Columns{{Name: "POS"}},
+	}
+	rows, err = ts.dialect.Query(ts.connection, &stmt)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var field typeField
+		err = rows.Scan(&field.Name, &field.Description, &field.Kind, &field.Type)
+		if err != nil {
+			log.Println(err)
+			return nil
+		}
+		field.fieldType = ts.New(field.Kind, field.Type)
+		strct.fields = append(strct.fields, field)
+	}
+	return strct
+}
+
 type RegisterError struct {
 }
 
@@ -203,6 +258,35 @@ func (ts *typeSystem) Register(elms []buts.ElementReg, strts []buts.StructureReg
 		}
 		i, err := ts.dialect.Exec(ts.connection, &stmt)
 		log.Printf(" %d - %v \n", i, err)
+	}
+	for _, s := range strts {
+		stmt := Statement{
+			Table:   tabDatStructure.Table,
+			Command: INSERT,
+			Presentation: Columns{
+				{Name: "NAME", Value: &s.Name},
+				{Name: "DESCRIPTION", Value: &s.Description},
+				{Name: "TAGS", Value: &s.Tags},
+			},
+		}
+		i, err := ts.dialect.Exec(ts.connection, &stmt)
+		log.Printf(" %d - %v \n", i, err)
+		for idx, f := range s.Items {
+			stmt := Statement{
+				Table:   tabDatFeld.Table,
+				Command: INSERT,
+				Presentation: Columns{
+					{Name: "STRUCT_NAME", Value: &s.Name},
+					{Name: "POS", Value: &idx},
+					{Name: "NAME", Value: &f.Name},
+					{Name: "DESCRIPTION", Value: &f.Description},
+					{Name: "KIND", Value: &f.Kind},
+					{Name: "TYPE", Value: &f.Type},
+				},
+			}
+			i, err := ts.dialect.Exec(ts.connection, &stmt)
+			log.Printf(" %d - %v \n", i, err)
+		}
 	}
 	return nil
 }

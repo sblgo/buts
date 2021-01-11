@@ -44,3 +44,19 @@ func (t typeElement) DbType() buts.DbType {
 func (te *typeElement) New() buts.Value {
 	return buts.Value{}
 }
+
+type typeStructure struct {
+	typeNil
+	Name        string
+	Description string
+	Tags        string
+	fields      []typeField
+}
+
+type typeField struct {
+	Name        string
+	Description string
+	Kind        buts.Kind
+	Type        string
+	fieldType   buts.Type
+}

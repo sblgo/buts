@@ -81,9 +81,10 @@ type StructureReg struct {
 }
 
 type FeldReg struct {
-	Name string
-	Kind Kind
-	Type string
+	Name        string
+	Description string
+	Kind        Kind
+	Type        string
 }
 
 type TableReg struct {
