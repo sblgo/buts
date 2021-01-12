@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"log"
+	"reflect"
 
 	"github.com/sblgo/buts"
 )
@@ -147,35 +148,33 @@ func (ts *typeSystem) newElement(name string) buts.Type {
 	if rows, err := ts.dialect.Query(ts.connection, &stmt); err != nil {
 		return nil
 	} else if rows.Next() {
-		te := buts.ElementReg{}
+		te := &typeElement{
+			typeNil: typeNil{
+				typeSystem: ts,
+				kind:       buts.Element,
+			},
+		}
 		err = rows.Scan(
-			&te.Name,
-			&te.Description,
-			&te.GoType,
-			&te.DbType,
-			&te.DbLength,
-			&te.DbDecimals,
-			&te.Tags,
-			&te.Domain,
-			&te.DomainTable,
-			&te.DomainGoColumn,
-			&te.DomainDbColumn,
-			&te.Conversion,
+			&te.name,
+			&te.description,
+			&te.goType,
+			&te.dbType,
+			&te.dbLength,
+			&te.dbDecimals,
+			&te.tags,
+			&te.domain,
+			&te.domainTable,
+			&te.domainGoColumn,
+			&te.domainDbColumn,
+			&te.conversion,
 		)
 		if err != nil {
 			log.Println(err)
 			return nil
 		} else {
-			rte := &typeElement{
-				typeNil: typeNil{
-					typeSystem: ts,
-					kind:       buts.Element,
-				},
-				ElementReg: te,
-				refDbType:  dbTypeMap[te.DbType],
-				refGoType:  goTypeMap[te.GoType],
-			}
-			return rte
+			te.reflGoType = goTypeMap[te.goType]
+			te.reflDbType = dbTypeMap[te.dbType]
+			return te
 		}
 	}
 	return nil
@@ -187,7 +186,8 @@ func (ts *typeSystem) newStructure(name string) buts.Type {
 			typeSystem: ts,
 			kind:       buts.Structure,
 		},
-		fields: make([]typeField, 0),
+		fields:     make([]typeField, 0),
+		reflFields: make([]reflect.StructField, 0),
 	}
 	stmt := Statement{
 		Table:        tabDatStructure.Table,
@@ -203,7 +203,7 @@ func (ts *typeSystem) newStructure(name string) buts.Type {
 	}
 	defer rows.Close()
 	if rows.Next() {
-		err = rows.Scan(&strct.Name, &strct.Description, &strct.Tags)
+		err = rows.Scan(&strct.typeNil.name, &strct.Description, &strct.Tags)
 	} else {
 		return nil
 	}
@@ -213,13 +213,14 @@ func (ts *typeSystem) newStructure(name string) buts.Type {
 		Command:      SELECT,
 		Presentation: Columns{{Name: "NAME"}, {Name: "DESCRIPTION"}, {Name: "KIND"}, {Name: "TYPE"}},
 		Condition:    Columns{{Name: "STRUCT_NAME", Value: &name, Operator: OP_EQ}},
-		Sort:         Columns{{Name: "POS"}},
+		Sort:         Columns{{Name: "POS", Value: "asc"}},
 	}
 	rows, err = ts.dialect.Query(ts.connection, &stmt)
 	if err != nil {
 		return nil
 	}
 	defer rows.Close()
+
 	for rows.Next() {
 		var field typeField
 		err = rows.Scan(&field.Name, &field.Description, &field.Kind, &field.Type)
@@ -228,8 +229,14 @@ func (ts *typeSystem) newStructure(name string) buts.Type {
 			return nil
 		}
 		field.fieldType = ts.New(field.Kind, field.Type)
+		sf := reflect.StructField{
+			Name: field.Name,
+			Type: field.fieldType.ReflGoType(),
+		}
 		strct.fields = append(strct.fields, field)
+		strct.reflFields = append(strct.reflFields, sf)
 	}
+	strct.reflGoType = reflect.StructOf(strct.reflFields)
 	return strct
 }
 

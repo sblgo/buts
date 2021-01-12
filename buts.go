@@ -15,6 +15,7 @@ const (
 	GoInvalid GoType = iota
 	GoString
 	GoInt
+	GoStructure
 )
 
 func (g GoType) String() string {
@@ -25,6 +26,8 @@ func (g GoType) String() string {
 		return "GoInt"
 	case GoString:
 		return "GoString"
+	case GoStructure:
+		return "GoStructure"
 	default:
 		return "GoInvalid"
 	}

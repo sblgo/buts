@@ -29,5 +29,6 @@ func main() {
 	fmt.Println(v.String())
 	t = ts.New(buts.Structure, "TDSELEMENT")
 	fmt.Printf("%v\n", t)
-
+	v = buts.New(t)
+	fmt.Printf("%v\n", v)
 }

@@ -17,25 +17,18 @@ type Type interface {
 	GoType() GoType
 	DbType() DbType
 	Kind() Kind
+	ReflGoType() reflect.Type
+	ReflDbType() reflect.Type
 	TypeSystem() TypeSystem
+	Name() string
 }
 
 func New(t Type) Value {
 	v := Value{
 		&value{
-			valueType: t,
+			valueType:    t,
+			reflectValue: reflect.New(t.ReflGoType()),
 		},
-	}
-	switch t.Kind() {
-	case Element:
-		switch t.GoType() {
-		case GoString:
-			var s string
-			v.reflectValue = reflect.New(reflect.TypeOf(s))
-		case GoInt:
-			var i int
-			v.reflectValue = reflect.New(reflect.TypeOf(i))
-		}
 	}
 
 	return v

@@ -2,6 +2,7 @@ package buts
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -10,10 +11,12 @@ import (
 var (
 	errorMissingConvRule = errors.New("Missing conversion rule")
 	convFuncMap          = map[string]ConversionFunc{
-		"ConvExGoStringIn":  ConvExGoStringIn,
-		"ConvExGoStringOut": ConvExGoStringOut,
-		"ConvExGoIntIn":     ConvExGoIntIn,
-		"ConvExGoIntOut":    ConvExGoIntOut,
+		"ConvExGoStringIn":     ConvExGoStringIn,
+		"ConvExGoStringOut":    ConvExGoStringOut,
+		"ConvExGoIntIn":        ConvExGoIntIn,
+		"ConvExGoIntOut":       ConvExGoIntOut,
+		"ConvExGoStructureIn":  ConvExGoStructureIn,
+		"ConvExGoStructureOut": ConvExGoStructureOut,
 	}
 )
 
@@ -71,18 +74,29 @@ func ConvExGoIntIn(desc Type, k reflect.Kind, v interface{}) (interface{}, error
 }
 
 func ConvExGoIntOut(desc Type, k reflect.Kind, v interface{}) (interface{}, error) {
-	u := unwrapReflect(v).(string)
+	u := unwrapReflect(v).(int)
 	switch k {
 	case reflect.String:
-		if i, err := strconv.Atoi(u); err != nil {
-			return nil, err
-		} else {
-			return i, nil
-		}
+		return strconv.Itoa(u), nil
 	case reflect.Int:
 		return u, nil
 	}
 	return nil, errorMissingConvRule
+}
+
+func ConvExGoStructureIn(desc Type, k reflect.Kind, v interface{}) (interface{}, error) {
+	return nil, errorMissingConvRule
+}
+
+func ConvExGoStructureOut(desc Type, k reflect.Kind, v interface{}) (interface{}, error) {
+	u := unwrapReflect(v)
+	switch k {
+	case reflect.String:
+		return fmt.Sprintf("%v", u), nil
+	case reflect.Int:
+		return 0, errorMissingConvRule
+	}
+	return desc.Name(), nil
 }
 
 func convFunc(e string, t string, d string) ConversionFunc {

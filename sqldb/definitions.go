@@ -81,8 +81,8 @@ var (
 
 	insDatStructure = []buts.StructureReg{
 		{"TDSELEMENT", "table ts_dat_element", "", []buts.FeldReg{
-			{"NAME", "", buts.Element, "TDEENAME"},
-			{"DESCRIPTION", "", buts.Element, "TDEEDESC"},
+			{"NAME", "NAME of element", buts.Element, "TDEENAME"},
+			{"DESCRIPTION", "DESCRIPTION of element", buts.Element, "TDEEDESC"},
 			{"GO_TYPE", "", buts.Element, "TDEEGOTYP"},
 			{"DB_TYPE", "", buts.Element, "TDEEDBTYP"},
 			{"COL_LENGTH", "", buts.Element, "TDEECLLEN"},
