@@ -42,6 +42,25 @@ func (t typeNil) ReflDbType() reflect.Type {
 	panic("not defined")
 }
 
+// Field returns a struct type's i'th field type.
+// It panics if the type's Kind is not Struct.
+// It panics if i is not in the range [0, NumField()).
+func (t typeNil) Field(i int) buts.Type {
+	panic("no struct type")
+}
+
+// FieldByName returns the struct field type with the given name
+// and a boolean indicating if the field was found.
+func (t typeNil) FieldByName(name string) (buts.Type, bool, int) {
+	panic("no struct type")
+}
+
+// NumField returns a struct type's field count.
+// It panics if the type's Kind is not Struct.
+func (t typeNil) NumField() int {
+	panic("no struct type")
+}
+
 type typeElement struct {
 	typeNil
 	goType         buts.GoType
@@ -86,4 +105,32 @@ type typeField struct {
 
 func (ts *typeStructure) GoType() buts.GoType {
 	return buts.GoStructure
+}
+
+// Field returns a struct type's i'th field type.
+// It panics if the type's Kind is not Struct.
+// It panics if i is not in the range [0, NumField()).
+func (t *typeStructure) Field(i int) buts.Type {
+	if 0 <= i && i < len(t.fields) {
+		return t.fields[i].fieldType
+	} else {
+		panic("no struct type")
+	}
+}
+
+// FieldByName returns the struct field type with the given name
+// and a boolean indicating if the field was found.
+func (t *typeStructure) FieldByName(name string) (buts.Type, bool, int) {
+	for idx, field := range t.fields {
+		if field.Name == name {
+			return field.fieldType, true, idx
+		}
+	}
+	return nil, false, -1
+}
+
+// NumField returns a struct type's field count.
+// It panics if the type's Kind is not Struct.
+func (t *typeStructure) NumField() int {
+	return len(t.fields)
 }

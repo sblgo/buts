@@ -19,8 +19,26 @@ type Type interface {
 	Kind() Kind
 	ReflGoType() reflect.Type
 	ReflDbType() reflect.Type
+
+	//TypeSystem returns the  type system of the type
 	TypeSystem() TypeSystem
+
+	// Name returns the type's name.
 	Name() string
+
+	// Field returns a struct type's i'th field type.
+	// It panics if the type's Kind is not Struct.
+	// It panics if i is not in the range [0, NumField()).
+	Field(i int) Type
+
+	// FieldByName returns the struct field type with the given name
+	// ,a boolean indicating if the field was found and the index of the field
+	// in the structure.
+	FieldByName(name string) (Type, bool, int)
+
+	// NumField returns a struct type's field count.
+	// It panics if the type's Kind is not Struct.
+	NumField() int
 }
 
 func New(t Type) Value {

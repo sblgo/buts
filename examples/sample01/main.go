@@ -30,5 +30,9 @@ func main() {
 	t = ts.New(buts.Structure, "TDSELEMENT")
 	fmt.Printf("%v\n", t)
 	v = buts.New(t)
+	fv := v.Field(0)
+	fv.SetString("TestName")
+	dbv, _ := v.FieldByName("DB_TYPE")
+	dbv.SetInt(int(buts.DbVarchar))
 	fmt.Printf("%v\n", v)
 }

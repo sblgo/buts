@@ -71,3 +71,39 @@ func (v *value) Int() int {
 func (v *value) Type() Type {
 	return v.valueType
 }
+
+// Field returns a struct type's i'th field type.
+// It panics if the type's Kind is not Struct.
+// It panics if i is not in the range [0, NumField()).
+func (t *value) Field(i int) Value {
+	if 0 <= i && i < t.Type().NumField() {
+		return Value{
+			value: &value{
+				valueType:    t.Type().Field(i),
+				reflectValue: t.reflectValue.Elem().Field(i).Addr(),
+			},
+		}
+	} else {
+		panic("no struct type")
+	}
+}
+
+// FieldByName returns the struct field type with the given name
+// and a boolean indicating if the field was found.
+func (t *value) FieldByName(name string) (Value, bool) {
+	if ft, ok, idx := t.Type().FieldByName(name); ok {
+		return Value{
+			&value{
+				valueType:    ft,
+				reflectValue: t.reflectValue.Elem().Field(idx).Addr(),
+			},
+		}, true
+	}
+	return Value{}, false
+}
+
+// NumField returns a struct type's field count.
+// It panics if the type's Kind is not Struct.
+func (v *value) NumField() int {
+	return v.Type().NumField()
+}
