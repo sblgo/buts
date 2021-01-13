@@ -15,7 +15,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
+	//	defer db.Close()
 	var ts buts.TypeSystem
 	ts, err = sqldb.New("standard", db)
 	fmt.Printf("%v - %v\n", ts, err)

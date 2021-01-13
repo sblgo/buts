@@ -6,7 +6,8 @@ const (
 	Invalid Kind = iota
 	Element
 	Structure
-	Table
+	DbTable
+	MemTable
 )
 
 type GoType int
@@ -49,8 +50,10 @@ func (k Kind) String() string {
 		return "element"
 	case Structure:
 		return "structure"
-	case Table:
-		return "table"
+	case DbTable:
+		return "dbtable"
+	case MemTable:
+		return "memtable"
 	}
 	return "undefined"
 }
@@ -94,8 +97,18 @@ type TableReg struct {
 	Name        string
 	Description string
 	Tags        string
-	Type        string
+	TableType   Kind
 	Kind        Kind
+	Type        string
+	SQLName     string
+	Indizes     []TableIndex
+}
+
+type TableIndex struct {
+	Name   string
+	PK     bool
+	Unique bool
+	Fields []string
 }
 
 type Modifier interface {
